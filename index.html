@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ăn Gì Đây - Chia sẻ món ngon</title>
+  <style>
+    :root{
+      --bg:#07111f;--panel:#0f1a2f;--panel2:#0b1527;--line:#24324b;--text:#eef4ff;--muted:#9fb0cb;
+      --green:#22c55e;--red:#ef4444;--soft:#15233a;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:linear-gradient(180deg,#040815,#0b1324);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    body{min-height:100vh}
+    .wrap{max-width:1380px;margin:0 auto;padding:14px}
+    .hidden{display:none!important}
+    .topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+    .brand{display:flex;gap:10px;align-items:center}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#22c55e);display:flex;align-items:center;justify-content:center;font-size:22px}
+    .title{font-size:24px;font-weight:800}.subtitle{color:var(--muted);font-size:13px;margin-top:2px}
+    .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#132238;border:1px solid var(--line);font-size:12px;color:#d6e5ff}
+    .grid{display:grid;gap:12px}.main{grid-template-columns:420px 1fr;align-items:start}
+    .card{background:rgba(15,26,47,.96);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 12px 24px rgba(0,0,0,.22)}
+    .panelTitle{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.panelTitle h2,.panelTitle h3{margin:0;font-size:16px}
+    .row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+    label{display:block;color:var(--muted);font-size:12px;margin:0 0 5px}
+    input,select,textarea,button{width:100%;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 11px;font-size:14px}
+    textarea{min-height:78px;resize:vertical} button{cursor:pointer;font-weight:700}
+    .btn-green{background:var(--green);border-color:transparent;color:#082a13}.btn-red{background:var(--red);border-color:transparent;color:#fff}.btn-soft{background:var(--soft)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{width:auto}
+    .warnBox,.okBox{border-radius:12px;padding:10px 11px;font-size:13px;margin-top:8px}.warnBox{background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.25);color:#fde68a}.okBox{background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.22);color:#bbf7d0}
+    .list{display:grid;gap:10px;max-height:calc(100vh - 160px);overflow:auto;padding-right:2px}
+    .item{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:11px}
+    .itemTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.itemTitle{font-size:17px;font-weight:800;line-height:1.2}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.chip{padding:4px 9px;border-radius:999px;background:#16253d;border:1px solid #21314b;font-size:12px;color:#dce9ff}
+    .price{font-size:18px;font-weight:800;white-space:nowrap}.meta{display:grid;gap:5px;margin-top:8px;font-size:13px;color:#dce8ff}.meta b{color:#fff}
+    .note{color:#d7e5ff;opacity:.95;margin-top:6px;font-size:13px;white-space:pre-wrap}
+    .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto;font-size:12px;padding:8px 10px;border-radius:10px;text-decoration:none;border:1px solid var(--line);background:#132238;color:var(--text)}
+    .leftGrow{min-width:0;flex:1}.topRight{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+    .empty{padding:24px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px;background:rgba(10,18,34,.5)}
+    .toggleRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.toggle{padding:8px 11px;border-radius:999px;background:#132238;border:1px solid var(--line);font-size:12px;cursor:pointer}.toggle.active{background:#1c3252;border-color:#33527d}
+    .footerHint{margin-top:8px;color:var(--muted);font-size:12px}.mini{font-size:11px;color:var(--muted)}
+    @media (max-width:1080px){.main{grid-template-columns:1fr}.list{max-height:none}}
+    @media (max-width:700px){.row>*{min-width:100%}.title{font-size:21px}.topRight{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">🍜</div>
+        <div>
+          <div class="title">Ăn Gì Đây</div>
+          <div class="subtitle">Bạn bè cùng cập nhật món ngon để tra cứu nhanh, giao diện gọn và dễ nhập</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span id="syncStatus" class="badge">Đang chạy local demo</span>
+      </div>
+    </div>
+
+    <div class="grid main">
+      <div class="grid">
+        <div class="card">
+          <div class="panelTitle">
+            <h2 id="formTitle">Thêm món ăn</h2>
+            <span class="badge" id="modeBadge">Chế độ thêm mới</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Thành phố</label>
+              <select id="cityInput">
+                <option>Đà Nẵng</option><option>Hà Nội</option><option>Hải Phòng</option><option>TP. Hồ Chí Minh</option><option>Cần Thơ</option><option>An Giang</option><option>Bà Rịa - Vũng Tàu</option><option>Bắc Giang</option><option>Bắc Kạn</option><option>Bạc Liêu</option><option>Bắc Ninh</option><option>Bến Tre</option><option>Bình Dương</option><option>Bình Định</option><option>Bình Phước</option><option>Bình Thuận</option><option>Cà Mau</option><option>Cao Bằng</option><option>Đắk Lắk</option><option>Đắk Nông</option><option>Điện Biên</option><option>Đồng Nai</option><option>Đồng Tháp</option><option>Gia Lai</option><option>Hà Giang</option><option>Hà Nam</option><option>Hà Tĩnh</option><option>Hải Dương</option><option>Hậu Giang</option><option>Hòa Bình</option><option>Hưng Yên</option><option>Khánh Hòa</option><option>Kiên Giang</option><option>Kon Tum</option><option>Lai Châu</option><option>Lâm Đồng</option><option>Lạng Sơn</option><option>Lào Cai</option><option>Long An</option><option>Nam Định</option><option>Nghệ An</option><option>Ninh Bình</option><option>Ninh Thuận</option><option>Phú Thọ</option><option>Phú Yên</option><option>Quảng Bình</option><option>Quảng Nam</option><option>Quảng Ngãi</option><option>Quảng Ninh</option><option>Quảng Trị</option><option>Sóc Trăng</option><option>Sơn La</option><option>Tây Ninh</option><option>Thái Bình</option><option>Thái Nguyên</option><option>Thanh Hóa</option><option>Thừa Thiên Huế</option><option>Tiền Giang</option><option>Trà Vinh</option><option>Tuyên Quang</option><option>Vĩnh Long</option><option>Vĩnh Phúc</option><option>Yên Bái</option>
+              </select>
+            </div>
+            <div>
+              <label>Loại món ăn</label>
+              <select id="categoryInput">
+                <option value="Đồ nước">Đồ nước</option><option value="Đồ khô">Đồ khô</option><option value="Ăn vặt">Ăn vặt</option><option value="Đồ uống">Đồ uống</option><option value="Loại khác">Loại khác</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row"><div><label>Tên món ăn <span class="mini">(bắt buộc)</span></label><input id="dishInput" placeholder="Ví dụ: Cơm gà Bà Lan" /></div></div>
+
+          <div class="row">
+            <div><label>Giá tiền</label><input id="priceInput" placeholder="Ví dụ: 35k / 120000" /></div>
+            <div><label>Địa chỉ / SĐT <span class="mini">(bắt buộc)</span></label><input id="addressInput" placeholder="Ví dụ: 12 Trần Phú, Đà Nẵng - 0905..." /></div>
+          </div>
+
+          <div class="row">
+            <div><label>Đánh giá nhanh</label><select id="ratingInput"><option value="Rất nên thử">Rất nên thử</option><option value="Ngon">Ngon</option><option value="Tạm ổn">Tạm ổn</option><option value="Ăn cho biết">Ăn cho biết</option></select></div>
+            <div><label>Đánh giá sao</label><select id="starInput"><option value="5">★★★★★ (5 sao)</option><option value="4">★★★★☆ (4 sao)</option><option value="3" selected>★★★☆☆ (3 sao)</option><option value="2">★★☆☆☆ (2 sao)</option><option value="1">★☆☆☆☆ (1 sao)</option></select></div>
+          </div>
+
+          <div><label>Ghi chú ngắn</label><textarea id="noteInput" placeholder="Ví dụ: Nước dùng ngọt, nên đi buổi tối, khá đông cuối tuần, dán link địa chỉ hoặc link quán nếu có..."></textarea></div>
+
+          <div id="dupWarning" class="warnBox hidden"></div>
+          <div id="saveInfo" class="okBox hidden"></div>
+
+          <div class="toolbar" style="margin-top:10px">
+            <button class="btn-green" onclick="saveDish()" id="saveBtn">Cập nhật món ăn</button>
+            <button class="btn-red hidden" onclick="cancelEdit()" id="cancelEditBtn">Hủy sửa</button>
+          </div>
+          <div class="footerHint">Đã rút gọn: bỏ tên quán riêng, bỏ người giới thiệu, bỏ link ảnh/map riêng, bỏ thống kê nhanh.</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="panelTitle"><h2>Tra cứu món ăn</h2><span class="badge" id="countBadge">0 món</span></div>
+          <div class="toggleRow" id="viewTabs">
+            <div class="toggle active" data-view="all" onclick="setViewMode('all')">Tất cả</div>
+            <div class="toggle" data-view="city" onclick="setViewMode('city')">Theo thành phố</div>
+            <div class="toggle" data-view="category" onclick="setViewMode('category')">Theo loại món</div>
+          </div>
+          <div class="row">
+            <div><label>Tìm kiếm</label><input id="searchInput" placeholder="Tên món, địa chỉ, ghi chú..." oninput="render()" /></div>
+            <div><label>Lọc thành phố</label><select id="filterCity" onchange="render()"><option value="">Tất cả thành phố</option></select></div>
+            <div><label>Lọc loại món</label><select id="filterCategory" onchange="render()"><option value="">Tất cả loại món</option><option>Đồ nước</option><option>Đồ khô</option><option>Ăn vặt</option><option>Đồ uống</option><option>Loại khác</option></select></div>
+            <div><label>Sắp xếp</label><select id="sortInput" onchange="render()"><option value="newest">Mới cập nhật</option><option value="city">Theo thành phố A-Z</option><option value="category">Theo loại món</option><option value="name">Theo tên món A-Z</option><option value="rating">Ưu tiên đánh giá cao</option></select></div>
+          </div>
+        </div>
+        <div class="list" id="dishList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, onSnapshot, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+    const FIREBASE_CONFIG = { apiKey:'THAY_API_KEY', authDomain:'THAY_AUTH_DOMAIN', projectId:'THAY_PROJECT_ID', storageBucket:'THAY_STORAGE_BUCKET', messagingSenderId:'THAY_MESSAGING_SENDER_ID', appId:'THAY_APP_ID' };
+    const LS_KEY='food_share_compact_v2'; const DEFAULT_CITY='Đà Nẵng';
+    const RATING_ORDER={ 'Rất nên thử':4,'Ngon':3,'Tạm ổn':2,'Ăn cho biết':1 };
+    let app=null, db=null, unsub=null, foods=[], editId=null, viewMode='all';
+
+    const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const norm=s=>String(s||'').trim().replace(/\s+/g,' '); const key=s=>String(s||'').trim().toLowerCase();
+    const fmtDate=v=>{ if(!v) return ''; const d=v?.toDate?v.toDate():new Date(v); return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN'); };
+    const priceText=v=> norm(v)||'Chưa rõ giá';
+    const allCities=()=>Array.from(new Set(foods.map(x=>x.city).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'vi'));
+    function setSync(t){ document.getElementById('syncStatus').textContent=t; }
+    function hasFirebaseConfig(){ return FIREBASE_CONFIG.apiKey && !String(FIREBASE_CONFIG.apiKey).includes('THAY_'); }
+    function initFirebase(){ if(!hasFirebaseConfig()) return false; if(!app){ app=initializeApp(FIREBASE_CONFIG); db=getFirestore(app); } setSync('Đang đồng bộ online bằng Firebase'); return true; }
+
+    function readForm(){ return { city:norm(cityInput.value)||DEFAULT_CITY, category:categoryInput.value, dish:norm(dishInput.value), price:norm(priceInput.value), address:norm(addressInput.value), rating:ratingInput.value, stars:Number(starInput.value||3), note:norm(noteInput.value), inactive:false }; }
+    function validateFood(f){ if(!f.dish) throw new Error('Tên món ăn không được để trống.'); if(!f.address) throw new Error('Địa chỉ / SĐT không được để trống.'); }
+    function findDuplicates(f,ignoreId=''){ const kd=key(f.dish), kc=key(f.city); return foods.filter(x=>x.id!==ignoreId&&x.inactive!==true).filter(x=>key(x.dish)===kd&&key(x.city)===kc); }
+    function showDuplicateWarning(list){ const el=dupWarning; if(!list.length){ el.classList.add('hidden'); el.textContent=''; return; } el.innerHTML=`<b>Cảnh báo trùng gần giống:</b> ${esc(list.slice(0,3).map(x=>`${x.dish}${x.city?' ('+x.city+')':''}`).join(' | '))}. Vẫn có thể lưu nếu muốn.`; el.classList.remove('hidden'); }
+    function showSaveInfo(text){ saveInfo.textContent=text; saveInfo.classList.remove('hidden'); setTimeout(()=>saveInfo.classList.add('hidden'),2200); }
+    function uid(len=10){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz'; let out=''; for(let i=0;i<len;i++) out+=chars[Math.floor(Math.random()*chars.length)]; return out; }
+
+    window.resetForm=function(){ editId=null; formTitle.textContent='Thêm món ăn'; modeBadge.textContent='Chế độ thêm mới'; dishInput.value=''; priceInput.value=''; addressInput.value=''; noteInput.value=''; cityInput.value=DEFAULT_CITY; categoryInput.value='Đồ nước'; ratingInput.value='Rất nên thử'; starInput.value='3'; saveBtn.textContent='Cập nhật món ăn'; cancelEditBtn.classList.add('hidden'); dupWarning.classList.add('hidden'); };
+    window.cancelEdit=()=>resetForm();
+    function saveLocal(list){ localStorage.setItem(LS_KEY, JSON.stringify(list)); }
+    function loadLocal(){ try{ const raw=localStorage.getItem(LS_KEY); foods=raw?JSON.parse(raw):[]; }catch{ foods=[]; } setSync('Đang chạy local demo'); render(); }
+
+    window.saveDish=async function(){ try{ const f=readForm(); validateFood(f); showDuplicateWarning(findDuplicates(f, editId||'')); if(db){ if(editId){ await updateDoc(doc(db,'foods',editId), { ...f, updatedAt:serverTimestamp() }); showSaveInfo('Đã sửa món ăn.'); } else { await addDoc(collection(db,'foods'), { ...f, createdAt:serverTimestamp(), updatedAt:serverTimestamp() }); showSaveInfo('Đã thêm món ăn mới.'); } } else { if(editId){ foods=foods.map(x=>x.id===editId?{...x,...f,updatedAt:new Date().toISOString()}:x); showSaveInfo('Đã sửa món ăn.'); } else { foods.unshift({ id:uid(), ...f, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() }); showSaveInfo('Đã thêm món ăn mới.'); } saveLocal(foods); render(); } resetForm(); } catch(e){ alert(e.message||'Không lưu được món ăn.'); } };
+    window.beginEdit=function(id){ const f=foods.find(x=>x.id===id); if(!f) return; editId=id; formTitle.textContent='Chỉnh sửa món ăn'; modeBadge.textContent='Đang sửa dữ liệu'; dishInput.value=f.dish||''; priceInput.value=f.price||''; addressInput.value=f.address||''; noteInput.value=f.note||''; cityInput.value=f.city||DEFAULT_CITY; categoryInput.value=f.category||'Đồ nước'; ratingInput.value=f.rating||'Ngon'; starInput.value=String(f.stars||3); saveBtn.textContent='Lưu chỉnh sửa'; cancelEditBtn.classList.remove('hidden'); showDuplicateWarning(findDuplicates(f, editId)); window.scrollTo({top:0, behavior:'smooth'}); };
+    window.removeDish=async function(id){ if(!confirm('Xóa món ăn này?')) return; if(db){ await deleteDoc(doc(db,'foods',id)); } else { foods=foods.filter(x=>x.id!==id); saveLocal(foods); render(); } if(editId===id) resetForm(); };
+    window.toggleInactive=async function(id){ const f=foods.find(x=>x.id===id); if(!f) return; const next=!(f.inactive===true); if(db){ await updateDoc(doc(db,'foods',id), { inactive:next, updatedAt:serverTimestamp() }); } else { foods=foods.map(x=>x.id===id?{...x,inactive:next,updatedAt:new Date().toISOString()}:x); saveLocal(foods); render(); } };
+    function buildFilterOptions(){ const prev=filterCity.value, options=allCities(); filterCity.innerHTML=`<option value="">Tất cả thành phố</option>`+options.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); if(options.includes(prev)) filterCity.value=prev; }
+    function filteredFoods(){ const q=key(searchInput.value), city=filterCity.value, category=filterCategory.value; const arr=foods.filter(x=>{ const text=[x.dish,x.city,x.address,x.note,x.category,x.price,x.rating].map(key).join(' | '); return (!q||text.includes(q))&&(!city||x.city===city)&&(!category||x.category===category); }); const sort=sortInput.value; arr.sort((a,b)=>{ if(sort==='name') return (a.dish||'').localeCompare(b.dish||'','vi'); if(sort==='city') return (a.city||'').localeCompare(b.city||'','vi'); if(sort==='category') return (a.category||'').localeCompare(b.category||'','vi'); if(sort==='rating'){ const rb=(RATING_ORDER[b.rating]||0)*10+Number(b.stars||0), ra=(RATING_ORDER[a.rating]||0)*10+Number(a.stars||0); return rb-ra; } const da=a.updatedAt?.toDate?a.updatedAt.toDate().getTime():new Date(a.updatedAt||a.createdAt||0).getTime(); const dbb=b.updatedAt?.toDate?b.updatedAt.toDate().getTime():new Date(b.updatedAt||b.createdAt||0).getTime(); return dbb-da; }); return arr; }
+    function cardHtml(x){ const inactiveBadge=x.inactive?`<span class="chip" style="background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca">Không còn phù hợp</span>`:''; const starText='★'.repeat(Number(x.stars||0))+'☆'.repeat(5-Number(x.stars||0)); return `<div class="item"><div class="itemTop"><div class="leftGrow"><div class="itemTitle">${esc(x.dish||'')}</div><div class="chips"><span class="chip">${esc(x.city||DEFAULT_CITY)}</span><span class="chip">${esc(x.category||'Loại khác')}</span><span class="chip">${esc(x.rating||'Ngon')}</span><span class="chip">${esc(starText)} (${Number(x.stars||0)}/5)</span>${inactiveBadge}</div></div><div class="topRight"><div class="price">${esc(priceText(x.price))}</div></div></div><div class="meta">${x.address?`<div><b>Địa chỉ / SĐT:</b> ${esc(x.address)}</div>`:''}<div><b>Cập nhật:</b> ${esc(fmtDate(x.updatedAt||x.createdAt)||'Chưa rõ')}</div></div>${x.note?`<div class="note">${esc(x.note)}</div>`:''}<div class="actions"><button onclick="beginEdit('${esc(x.id)}')">Sửa</button><button onclick="toggleInactive('${esc(x.id)}')">${x.inactive?'Đánh dấu hoạt động lại':'Đánh dấu không còn phù hợp'}</button><button onclick="removeDish('${esc(x.id)}')">Xóa</button></div></div>`; }
+    function groupedHtml(list){ if(viewMode==='all') return list.map(cardHtml).join(''); const keyFn=viewMode==='city'?(x=>x.city||DEFAULT_CITY):(x=>x.category||'Loại khác'); const groups={}; list.forEach(x=>{ const k=keyFn(x); groups[k] ||= []; groups[k].push(x); }); return Object.keys(groups).sort((a,b)=>a.localeCompare(b,'vi')).map(g=>`<div class="card"><div class="panelTitle"><h3>${esc(g)}</h3><span class="badge">${groups[g].length} món</span></div><div class="grid">${groups[g].map(cardHtml).join('')}</div></div>`).join(''); }
+    window.render=function(){ buildFilterOptions(); const list=filteredFoods(); countBadge.textContent=`${list.length} món`; dishList.innerHTML=list.length?groupedHtml(list):`<div class="empty">Chưa có món nào khớp bộ lọc. Hãy thêm món đầu tiên.</div>`; };
+    window.setViewMode=function(mode){ viewMode=mode; document.querySelectorAll('#viewTabs .toggle').forEach(x=>x.classList.toggle('active', x.dataset.view===mode)); render(); };
+    async function bindFirestore(){ if(!db) return; if(unsub) unsub(); const q=query(collection(db,'foods'), orderBy('updatedAt','desc')); unsub=onSnapshot(q, snap=>{ foods=snap.docs.map(d=>({ id:d.id, ...d.data() })); setSync('Đã đồng bộ realtime'); render(); }, async()=>{ const snap=await getDocs(collection(db,'foods')); foods=snap.docs.map(d=>({ id:d.id, ...d.data() })); setSync('Đã đồng bộ online'); render(); }); }
+    function bootstrap(){ cityInput.value=DEFAULT_CITY; if(initFirebase()) bindFirestore(); else loadLocal(); render(); }
+    bootstrap();
+  </script>
+</body>
+</html>
