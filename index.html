@@ -96,7 +96,7 @@
 
           <div class="row">
             <div><label>Giá tiền</label><input id="priceInput" placeholder="Ví dụ: 35k / 120000" /></div>
-            <div><label>Địa chỉ / SĐT <span class="mini">(bắt buộc)</span></label><input id="addressInput" placeholder="Ví dụ: 12 Trần Phú, Đà Nẵng - 0905..." /></div>
+            <div><label>Địa chỉ / SĐT(nếu có) <span class="mini">(bắt buộc)</span></label><input id="addressInput" placeholder="Ví dụ: 12 Trần Phú, Đà Nẵng - 0905..." /></div>
           </div>
 
           <div class="row">
@@ -170,7 +170,7 @@ const FIREBASE_CONFIG = {
     function initFirebase(){ if(!hasFirebaseConfig()) return false; if(!app){ app=initializeApp(FIREBASE_CONFIG); db=getFirestore(app); } setSync('Đang đồng bộ online bằng Firebase'); return true; }
 
     function readForm(){ return { city:norm(cityInput.value)||DEFAULT_CITY, category:categoryInput.value, dish:norm(dishInput.value), price:norm(priceInput.value), address:norm(addressInput.value), rating:ratingInput.value, stars:Number(starInput.value||3), note:norm(noteInput.value), inactive:false }; }
-    function validateFood(f){ if(!f.dish) throw new Error('Tên món ăn không được để trống.'); if(!f.address) throw new Error('Địa chỉ / SĐT(nếu có) không được để trống.'); }
+    function validateFood(f){ if(!f.dish) throw new Error('Tên món ăn không được để trống.'); if(!f.address) throw new Error('Địa chỉ / SĐT không được để trống.'); }
     function findDuplicates(f,ignoreId=''){ const kd=key(f.dish), kc=key(f.city); return foods.filter(x=>x.id!==ignoreId&&x.inactive!==true).filter(x=>key(x.dish)===kd&&key(x.city)===kc); }
     function showDuplicateWarning(list){ const el=dupWarning; if(!list.length){ el.classList.add('hidden'); el.textContent=''; return; } el.innerHTML=`<b>Cảnh báo trùng gần giống:</b> ${esc(list.slice(0,3).map(x=>`${x.dish}${x.city?' ('+x.city+')':''}`).join(' | '))}. Vẫn có thể lưu nếu muốn.`; el.classList.remove('hidden'); }
     function showSaveInfo(text){ saveInfo.textContent=text; saveInfo.classList.remove('hidden'); setTimeout(()=>saveInfo.classList.add('hidden'),2200); }
