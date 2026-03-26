@@ -40,6 +40,16 @@
     .empty{padding:24px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px;background:rgba(10,18,34,.5)}
     .toggleRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.toggle{padding:8px 11px;border-radius:999px;background:#132238;border:1px solid var(--line);font-size:12px;cursor:pointer}.toggle.active{background:#1c3252;border-color:#33527d}
     .footerHint{margin-top:8px;color:var(--muted);font-size:12px}.mini{font-size:11px;color:var(--muted)}
+
+    .reviewBox{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(8,17,31,.55)}
+    .reviewSummary{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+    .reviewStars{font-weight:800}
+    .reviewList{display:grid;gap:8px;margin-top:10px}
+    .reviewItem{padding:9px 10px;border-radius:12px;background:#101c31;border:1px solid #22314b}
+    .reviewHead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+    .reviewName{font-weight:700}
+    .reviewTime{font-size:12px;color:var(--muted)}
+
     @media (max-width:1080px){.main{grid-template-columns:1fr}.list{max-height:none}}
     @media (max-width:700px){.row>*{min-width:100%}.title{font-size:21px}.topRight{align-items:flex-start}}
   </style>
@@ -141,11 +151,19 @@ const FIREBASE_CONFIG = {
     const LS_KEY='food_share_compact_v2'; const DEFAULT_CITY='Đà Nẵng';
     const RATING_ORDER={ 'Rất nên thử':4,'Ngon':3,'Tạm ổn':2,'Ăn cho biết':1 };
     let app=null, db=null, unsub=null, foods=[], editId=null, viewMode='all';
+    let openReviewFormId=null, openReviewListId=null;
 
     const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const norm=s=>String(s||'').trim().replace(/\s+/g,' '); const key=s=>String(s||'').trim().toLowerCase();
     const fmtDate=v=>{ if(!v) return ''; const d=v?.toDate?v.toDate():new Date(v); return Number.isNaN(d.getTime())?'':d.toLocaleString('vi-VN'); };
     const priceText=v=> norm(v)||'Chưa rõ giá';
+
+    function getReviews(food){ return Array.isArray(food?.reviews)?food.reviews:[]; }
+    function avgStars(food){ const list=getReviews(food); if(!list.length) return 0; return list.reduce((s,x)=>s+Number(x.stars||0),0)/list.length; }
+    function starString(n){ const v=Math.max(0,Math.min(5,Math.round(Number(n)||0))); return '★'.repeat(v)+'☆'.repeat(5-v); }
+    function avgStarText(food){ const avg=avgStars(food); return avg?`${avg.toFixed(1)}/5`:''; }
+    function reviewCountText(food){ return `${getReviews(food).length} đánh giá`; }
+
     const allCities=()=>Array.from(new Set(foods.map(x=>x.city).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'vi'));
     function setSync(t){ document.getElementById('syncStatus').textContent=t; }
     function hasFirebaseConfig(){ return FIREBASE_CONFIG.apiKey && !String(FIREBASE_CONFIG.apiKey).includes('THAY_'); }
@@ -161,19 +179,64 @@ const FIREBASE_CONFIG = {
     window.resetForm=function(){ editId=null; formTitle.textContent='Thêm món ăn'; modeBadge.textContent='Chế độ thêm mới'; dishInput.value=''; priceInput.value=''; addressInput.value=''; noteInput.value=''; cityInput.value=DEFAULT_CITY; categoryInput.value='Đồ nước'; ratingInput.value='Rất nên thử'; starInput.value='3'; saveBtn.textContent='Cập nhật món ăn'; cancelEditBtn.classList.add('hidden'); dupWarning.classList.add('hidden'); };
     window.cancelEdit=()=>resetForm();
     function saveLocal(list){ localStorage.setItem(LS_KEY, JSON.stringify(list)); }
-    function loadLocal(){ try{ const raw=localStorage.getItem(LS_KEY); foods=raw?JSON.parse(raw):[]; }catch{ foods=[]; } setSync('Đang chạy local demo'); render(); }
+    function loadLocal(){ try{ const raw=localStorage.getItem(LS_KEY); foods=raw?JSON.parse(raw):[]; foods=foods.map(x=>({ ...x, reviews:Array.isArray(x.reviews)?x.reviews:[] })); }catch{ foods=[]; } setSync('Đang chạy local demo'); render(); }
 
     window.saveDish=async function(){ try{ const f=readForm(); validateFood(f); showDuplicateWarning(findDuplicates(f, editId||'')); if(db){ if(editId){ await updateDoc(doc(db,'foods',editId), { ...f, updatedAt:serverTimestamp() }); showSaveInfo('Đã sửa món ăn.'); } else { await addDoc(collection(db,'foods'), { ...f, createdAt:serverTimestamp(), updatedAt:serverTimestamp() }); showSaveInfo('Đã thêm món ăn mới.'); } } else { if(editId){ foods=foods.map(x=>x.id===editId?{...x,...f,updatedAt:new Date().toISOString()}:x); showSaveInfo('Đã sửa món ăn.'); } else { foods.unshift({ id:uid(), ...f, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() }); showSaveInfo('Đã thêm món ăn mới.'); } saveLocal(foods); render(); } resetForm(); } catch(e){ alert(e.message||'Không lưu được món ăn.'); } };
     window.beginEdit=function(id){ const f=foods.find(x=>x.id===id); if(!f) return; editId=id; formTitle.textContent='Chỉnh sửa món ăn'; modeBadge.textContent='Đang sửa dữ liệu'; dishInput.value=f.dish||''; priceInput.value=f.price||''; addressInput.value=f.address||''; noteInput.value=f.note||''; cityInput.value=f.city||DEFAULT_CITY; categoryInput.value=f.category||'Đồ nước'; ratingInput.value=f.rating||'Ngon'; starInput.value=String(f.stars||3); saveBtn.textContent='Lưu chỉnh sửa'; cancelEditBtn.classList.remove('hidden'); showDuplicateWarning(findDuplicates(f, editId)); window.scrollTo({top:0, behavior:'smooth'}); };
     window.removeDish=async function(id){ if(!confirm('Xóa món ăn này?')) return; if(db){ await deleteDoc(doc(db,'foods',id)); } else { foods=foods.filter(x=>x.id!==id); saveLocal(foods); render(); } if(editId===id) resetForm(); };
     window.toggleInactive=async function(id){ const f=foods.find(x=>x.id===id); if(!f) return; const next=!(f.inactive===true); if(db){ await updateDoc(doc(db,'foods',id), { inactive:next, updatedAt:serverTimestamp() }); } else { foods=foods.map(x=>x.id===id?{...x,inactive:next,updatedAt:new Date().toISOString()}:x); saveLocal(foods); render(); } };
+
+    window.toggleReviewForm=function(id){
+      openReviewFormId = openReviewFormId===id ? null : id;
+      if(openReviewFormId!==id) openReviewListId = openReviewListId===id ? null : openReviewListId;
+      render();
+    };
+    window.toggleReviewList=function(id){
+      openReviewListId = openReviewListId===id ? null : id;
+      render();
+    };
+    window.addDishReview=async function(id){
+      try{
+        const food=foods.find(x=>x.id===id);
+        if(!food) return;
+        const nameEl=document.getElementById(`reviewName_${id}`);
+        const starEl=document.getElementById(`reviewStar_${id}`);
+        const commentEl=document.getElementById(`reviewComment_${id}`);
+        const name=norm(nameEl?.value);
+        const stars=Number(starEl?.value||5);
+        const comment=norm(commentEl?.value);
+        if(!name) throw new Error('Người đánh giá phải nhập tên.');
+        const nextReview={ name, stars, comment, createdAt:new Date().toISOString() };
+        const nextReviews=[...getReviews(food), nextReview];
+        if(db){
+          await updateDoc(doc(db,'foods',id), { reviews:nextReviews, updatedAt:serverTimestamp() });
+        }else{
+          foods=foods.map(x=>x.id===id?{...x,reviews:nextReviews,updatedAt:new Date().toISOString()}:x);
+          saveLocal(foods);
+        }
+        openReviewFormId=null;
+        openReviewListId=id;
+        render();
+        showSaveInfo('Đã gửi đánh giá món ăn.');
+      }catch(e){ alert(e.message||'Không gửi được đánh giá.'); }
+    };
+
     function buildFilterOptions(){ const prev=filterCity.value, options=allCities(); filterCity.innerHTML=`<option value="">Tất cả thành phố</option>`+options.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); if(options.includes(prev)) filterCity.value=prev; }
     function filteredFoods(){ const q=key(searchInput.value), city=filterCity.value, category=filterCategory.value; const arr=foods.filter(x=>{ const text=[x.dish,x.city,x.address,x.note,x.category,x.price,x.rating].map(key).join(' | '); return (!q||text.includes(q))&&(!city||x.city===city)&&(!category||x.category===category); }); const sort=sortInput.value; arr.sort((a,b)=>{ if(sort==='name') return (a.dish||'').localeCompare(b.dish||'','vi'); if(sort==='city') return (a.city||'').localeCompare(b.city||'','vi'); if(sort==='category') return (a.category||'').localeCompare(b.category||'','vi'); if(sort==='rating'){ const rb=(RATING_ORDER[b.rating]||0)*10+Number(b.stars||0), ra=(RATING_ORDER[a.rating]||0)*10+Number(a.stars||0); return rb-ra; } const da=a.updatedAt?.toDate?a.updatedAt.toDate().getTime():new Date(a.updatedAt||a.createdAt||0).getTime(); const dbb=b.updatedAt?.toDate?b.updatedAt.toDate().getTime():new Date(b.updatedAt||b.createdAt||0).getTime(); return dbb-da; }); return arr; }
-    function cardHtml(x){ const inactiveBadge=x.inactive?`<span class="chip" style="background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca">Không còn phù hợp</span>`:''; const starText='★'.repeat(Number(x.stars||0))+'☆'.repeat(5-Number(x.stars||0)); return `<div class="item"><div class="itemTop"><div class="leftGrow"><div class="itemTitle">${esc(x.dish||'')}</div><div class="chips"><span class="chip">${esc(x.city||DEFAULT_CITY)}</span><span class="chip">${esc(x.category||'Loại khác')}</span><span class="chip">${esc(x.rating||'Ngon')}</span><span class="chip">${esc(starText)} (${Number(x.stars||0)}/5)</span>${inactiveBadge}</div></div><div class="topRight"><div class="price">${esc(priceText(x.price))}</div></div></div><div class="meta">${x.address?`<div><b>Địa chỉ / SĐT:</b> ${esc(x.address)}</div>`:''}<div><b>Cập nhật:</b> ${esc(fmtDate(x.updatedAt||x.createdAt)||'Chưa rõ')}</div></div>${x.note?`<div class="note">${esc(x.note)}</div>`:''}<div class="actions"><button onclick="beginEdit('${esc(x.id)}')">Sửa</button><button onclick="toggleInactive('${esc(x.id)}')">${x.inactive?'Đánh dấu hoạt động lại':'Đánh dấu không còn phù hợp'}</button><button onclick="removeDish('${esc(x.id)}')">Xóa</button></div></div>`; }
+    function cardHtml(x){
+      const inactiveBadge=x.inactive?`<span class="chip" style="background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca">Không còn phù hợp</span>`:'';
+      const starText='★'.repeat(Number(x.stars||0))+'☆'.repeat(5-Number(x.stars||0));
+      const reviews=getReviews(x);
+      const avg=avgStars(x);
+      const avgChip=reviews.length?`<span class="chip">ĐTB người ăn sau: ${esc(avg.toFixed(1))}/5 (${reviews.length})</span>`:'';
+      const reviewForm=openReviewFormId===x.id?`<div class="reviewBox"><div class="row"><div><label>Tên người đánh giá</label><input id="reviewName_${esc(x.id)}" placeholder="Ví dụ: Minh" /></div><div><label>Số sao</label><select id="reviewStar_${esc(x.id)}"><option value="5">★★★★★ (5 sao)</option><option value="4">★★★★☆ (4 sao)</option><option value="3">★★★☆☆ (3 sao)</option><option value="2">★★☆☆☆ (2 sao)</option><option value="1">★☆☆☆☆ (1 sao)</option></select></div></div><div><label>Nhận xét</label><textarea id="reviewComment_${esc(x.id)}" placeholder="Viết cảm nhận món ăn..."></textarea></div><div class="toolbar" style="margin-top:8px"><button class="btn-green" onclick="addDishReview('${esc(x.id)}')">Gửi đánh giá</button><button class="btn-soft" onclick="toggleReviewForm('${esc(x.id)}')">Đóng</button></div></div>`:'';
+      const reviewList=openReviewListId===x.id?`<div class="reviewBox"><div class="reviewSummary"><span class="chip"><b>${reviews.length}</b> đánh giá</span>${reviews.length?`<span class="chip"><b>${esc(avg.toFixed(1))}/5</b> trung bình</span><span class="chip">${esc(starString(avg))}</span>`:`<span class="chip">Chưa có đánh giá nào</span>`}</div>${reviews.length?`<div class="reviewList">${reviews.slice().reverse().map(r=>`<div class="reviewItem"><div class="reviewHead"><div><span class="reviewName">${esc(r.name||'Ẩn danh')}</span> · <span class="reviewStars">${esc(starString(r.stars))}</span></div><div class="reviewTime">${esc(fmtDate(r.createdAt)||'')}</div></div>${r.comment?`<div>${esc(r.comment)}</div>`:`<div class="mini">Không có nhận xét thêm.</div>`}</div>`).join('')}</div>`:`<div class="mini" style="margin-top:8px">Món này chưa có ai đánh giá sau khi ăn.</div>`}</div>`:'';
+      return `<div class="item"><div class="itemTop"><div class="leftGrow"><div class="itemTitle">${esc(x.dish||'')}</div><div class="chips"><span class="chip">${esc(x.city||DEFAULT_CITY)}</span><span class="chip">${esc(x.category||'Loại khác')}</span><span class="chip">${esc(x.rating||'Ngon')}</span><span class="chip">${esc(starText)} (${Number(x.stars||0)}/5)</span>${avgChip}${inactiveBadge}</div></div><div class="topRight"><div class="price">${esc(priceText(x.price))}</div></div></div><div class="meta">${x.address?`<div><b>Địa chỉ / SĐT:</b> ${esc(x.address)}</div>`:''}<div><b>Cập nhật:</b> ${esc(fmtDate(x.updatedAt||x.createdAt)||'Chưa rõ')}</div></div>${x.note?`<div class="note">${esc(x.note)}</div>`:''}<div class="actions"><button onclick="beginEdit('${esc(x.id)}')">Sửa</button><button onclick="toggleInactive('${esc(x.id)}')">${x.inactive?'Đánh dấu hoạt động lại':'Đánh dấu không còn phù hợp'}</button><button onclick="removeDish('${esc(x.id)}')">Xóa</button><button onclick="toggleReviewForm('${esc(x.id)}')">${openReviewFormId===x.id?'Đóng đánh giá':'Đánh giá món'}</button><button onclick="toggleReviewList('${esc(x.id)}')">${openReviewListId===x.id?'Ẩn đánh giá':'Xem đánh giá'}</button></div>${reviewForm}${reviewList}</div>`;
+    }
     function groupedHtml(list){ if(viewMode==='all') return list.map(cardHtml).join(''); const keyFn=viewMode==='city'?(x=>x.city||DEFAULT_CITY):(x=>x.category||'Loại khác'); const groups={}; list.forEach(x=>{ const k=keyFn(x); groups[k] ||= []; groups[k].push(x); }); return Object.keys(groups).sort((a,b)=>a.localeCompare(b,'vi')).map(g=>`<div class="card"><div class="panelTitle"><h3>${esc(g)}</h3><span class="badge">${groups[g].length} món</span></div><div class="grid">${groups[g].map(cardHtml).join('')}</div></div>`).join(''); }
     window.render=function(){ buildFilterOptions(); const list=filteredFoods(); countBadge.textContent=`${list.length} món`; dishList.innerHTML=list.length?groupedHtml(list):`<div class="empty">Chưa có món nào khớp bộ lọc. Hãy thêm món đầu tiên.</div>`; };
     window.setViewMode=function(mode){ viewMode=mode; document.querySelectorAll('#viewTabs .toggle').forEach(x=>x.classList.toggle('active', x.dataset.view===mode)); render(); };
-    async function bindFirestore(){ if(!db) return; if(unsub) unsub(); const q=query(collection(db,'foods'), orderBy('updatedAt','desc')); unsub=onSnapshot(q, snap=>{ foods=snap.docs.map(d=>({ id:d.id, ...d.data() })); setSync('Đã đồng bộ realtime'); render(); }, async()=>{ const snap=await getDocs(collection(db,'foods')); foods=snap.docs.map(d=>({ id:d.id, ...d.data() })); setSync('Đã đồng bộ online'); render(); }); }
+    async function bindFirestore(){ if(!db) return; if(unsub) unsub(); const q=query(collection(db,'foods'), orderBy('updatedAt','desc')); unsub=onSnapshot(q, snap=>{ foods=snap.docs.map(d=>({ id:d.id, ...d.data(), reviews:Array.isArray(d.data().reviews)?d.data().reviews:[] })); setSync('Đã đồng bộ realtime'); render(); }, async()=>{ const snap=await getDocs(collection(db,'foods')); foods=snap.docs.map(d=>({ id:d.id, ...d.data(), reviews:Array.isArray(d.data().reviews)?d.data().reviews:[] })); setSync('Đã đồng bộ online'); render(); }); }
     function bootstrap(){ cityInput.value=DEFAULT_CITY; if(initFirebase()) bindFirestore(); else loadLocal(); render(); }
     bootstrap();
   </script>
